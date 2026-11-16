@@ -1,0 +1,48 @@
+services:
+  scanner:
+    build: .
+    container_name: vuln-scanner
+    volumes:
+      - ./reports:/app/reports
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - scanner-net
+    depends_on:
+      - http-server
+      - redis
+
+  # Example vulnerable services for testing
+  http-server:
+    image: python:3.11-slim
+    container_name: test-http
+    command: python -m http.server 8000 --bind 0.0.0.0
+    ports:
+      - "8000:8000"
+    networks:
+      - scanner-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: test-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - scanner-net
+
+  # Metasploit RPC (optional - for advanced exploitation)
+  metasploit:
+    image: metasploitframework/metasploit-framework:latest
+    container_name: metasploit-rpc
+    ports:
+      - "55553:55553"
+    environment:
+      - WORKSPACE=default
+    networks:
+      - scanner-net
+    profiles:
+      - metasploit
+
+networks:
+  scanner-net:
+    driver: bridge

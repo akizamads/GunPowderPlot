@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Secrets / local state — never publish these
+.env
+.env.*
+config.local.yaml
+c2_state.json
+*.pem
+*.key
+
+# Scan output (contains target data)
+reports/
+report.json
+report.csv
+.exploit_reports/
+*.log
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

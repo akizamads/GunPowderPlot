@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Byte-compile every Python file
+        run: python -m compileall -q . -x '(^|/)(\.git|reports|__pycache__)/'
+
+      - name: Module manifest smoke check
+        run: python smoke_check.py
+
+      - name: CLI commands are registered
+        run: |
+          for cmd in scan web-scan crypto-scan auth-scan misconfig-scan dependency-scan \
+                     ssl-check sqli-exploit bruteforce generate-payload detect-waf \
+                     waf-bypass-cmd auto-exploit msf-integration post-exploit; do
+            python cli.py "$cmd" --help > /dev/null || { echo "missing command: $cmd"; exit 1; }
+          done
+
+      - name: Interactive console lists its modules
+        run: python main.py --list
