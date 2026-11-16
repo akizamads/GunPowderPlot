@@ -1,0 +1,17 @@
+#!/bin/sh
+# Block commits that would publish build output, scan reports or secrets.
+# Enable once per clone with:  git config core.hooksPath .githooks
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+bad=$(printf '%s\n' "$staged" | grep -E '(^|/)(reports?/|__pycache__/|\.venv/|node_modules/)|(^|/)(report\.json|report\.csv|c2_state\.json|\.env|config\.local\.yaml)$|\.(pyc|pyo|pem|key|p12|pfx)$')
+
+if [ -n "$bad" ]; then
+    echo "pre-commit: refusing to commit generated files or secrets:"
+    printf '  %s\n' $bad
+    echo "Unstage them with:  git restore --staged <file>"
+    exit 1
+fi
+
+exit 0
