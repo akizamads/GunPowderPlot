@@ -29,16 +29,25 @@ jobs:
       - name: Byte-compile every Python file
         run: python -m compileall -q . -x '(^|/)(\.git|reports|__pycache__)/'
 
+      - name: Unit tests (offline)
+        run: python -m unittest discover -s tests -v
+
       - name: Module manifest smoke check
         run: python smoke_check.py
 
       - name: CLI commands are registered
         run: |
           for cmd in scan web-scan crypto-scan auth-scan misconfig-scan dependency-scan \
-                     ssl-check sqli-exploit bruteforce generate-payload detect-waf \
-                     waf-bypass-cmd auto-exploit msf-integration post-exploit; do
+                     ssl-check global-scan sqli-exploit bruteforce generate-payload \
+                     detect-waf waf-bypass-cmd auto-exploit msf-integration post-exploit; do
             python cli.py "$cmd" --help > /dev/null || { echo "missing command: $cmd"; exit 1; }
           done
+
+      - name: Global scan works offline from a fixture
+        run: |
+          python cli.py global-scan -c PH --samples 1 \
+            --prefix-source tests/fixtures/prefixes.txt -o /tmp/global.json
+          test -s /tmp/global.json
 
       - name: Interactive console lists its modules
         run: python main.py --list

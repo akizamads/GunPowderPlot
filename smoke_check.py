@@ -25,7 +25,7 @@ def check(ok: bool, message: str) -> None:
 core.reload_modules()
 MODULES = core.MODULES
 print("modules loaded:", len(MODULES))
-check(len(MODULES) == 15, f"expected 15 modules, got {len(MODULES)}")
+check(len(MODULES) == 16, f"expected 16 modules, got {len(MODULES)}")
 
 # Sanity: the manifest loader used by module 08
 _08 = __import__("modules.08_dependency_scan", fromlist=["_load_manifest"])
@@ -39,6 +39,15 @@ for spec in MODULES:
     sig_ok = "session" in params and "save" in params
     print(f"{spec.number:02d} {spec.name:<34} sig_ok={sig_ok} target={spec.target}")
     check(sig_ok, f"module {spec.number:02d} run() missing session/save kwargs")
+
+# Module 16 must keep its documented TARGET/SIG contract like every other module.
+_16 = next((m for m in MODULES if m.number == 16), None)
+print("module 16 (global scan) registered:", _16 is not None)
+check(_16 is not None, "module 16 Global Country Scan is not registered")
+
+global_scan = __import__("global_scan")
+check(len(global_scan.COUNTRIES) == 249, "global_scan country table is incomplete")
+check(global_scan.normalize_countries(["ph"]) == ["PH"], "country code normalisation is broken")
 
 menu_ok = hasattr(core, "render_menu")
 print("main.py --list / -m / -t / --save wired:", menu_ok)

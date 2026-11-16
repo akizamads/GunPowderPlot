@@ -7,6 +7,7 @@ crash a scan (invalid numbers, empty hosts, unknown choices are re-asked).
 
 from __future__ import annotations
 
+import os
 import re
 from typing import Optional, Sequence
 
@@ -133,7 +134,13 @@ def ask_list(label: str, default: Sequence[str] = ()) -> list:
 
 
 def confirm(label: str, default: bool = False) -> bool:
-    """Yes/no question. Returns False when stdin is closed (never raises)."""
+    """Yes/no question. Returns False when stdin is closed (never raises).
+
+    Setting VSCAN_ASSUME_YES=1 answers every prompt with yes, which keeps
+    ``main.py --module N --save`` runnable from scripts and CI.
+    """
+    if os.environ.get("VSCAN_ASSUME_YES", "").lower() in ("1", "true", "yes"):
+        return True
     default_text = "Y/n" if default else "y/N"
     try:
         raw = input(f"  {label} [{default_text}]: ").strip().lower()

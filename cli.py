@@ -37,6 +37,7 @@ from post_exploiter import PostExploiter
 from msf_integration import MetasploitRPC, MsfPayloadGenerator
 from waf_bypass import WAFDetector, WAFBypass, WAFEvader
 from exploit_orchestrator import ExploitOrchestrator, AutoExploitStrategy, ExploitAggregator
+import global_scan
 from c2_module import C2Server, C2Agent, ALLOWED_TASK_TYPES
 
 CONFIG = load_config()
@@ -372,6 +373,58 @@ def dependency_scan(manifest: str):
             ok(f"No known CVEs for {len(dependencies)} dependency(ies)")
     except Exception as e:
         err(str(e))
+
+
+@cli.command('global-scan')
+@click.option('--country', '-c', 'countries', multiple=True,
+              help='ISO alpha-2 code (repeatable or comma-separated); omit for all countries')
+@click.option('--samples', default=5, type=int, help='Prefixes to inspect per country (1-20)')
+@click.option('--prefix-source', default=None,
+              help='Local CIDR file instead of downloading the public route report')
+@click.option('--workers', default=global_scan.MAX_WORKERS, type=int, help='Parallel country probes')
+@click.option('--output', '-o', default=None, help='Write the JSON report to this file')
+def global_scan_cmd(countries: Tuple[str, ...], samples: int, prefix_source: Optional[str],
+                    workers: int, output: Optional[str]):
+    """Probe the public web surface of every country (or the listed ones)"""
+    print_header()
+    try:
+        codes = global_scan.normalize_countries(list(countries) or None)
+    except ValueError as e:
+        err(str(e))
+        return
+
+    samples = max(1, min(samples, 20))
+    label = 'all countries' if codes == ['all'] else ', '.join(codes)
+    info(f"Global scan: {label} — {samples} prefix(es) per country\n")
+    warn("Authorized use only: this probes public hosts, no payloads are sent")
+
+    progress = lambda line: click.echo('   ' + line)
+    try:
+        report = global_scan.scan_countries(codes, samples=samples,
+                                            source=prefix_source, workers=workers,
+                                            progress=progress)
+    except Exception as e:
+        err(str(e))
+        return
+
+    click.echo()
+    for country in report['countries']:
+        if country['status'] != 'ok':
+            click.echo(f"  {country['country']:<3} {country['name']:<32} {country['status']}")
+            continue
+        reachable = country['reachable_hosts']
+        color = Fore.RED if reachable else Fore.GREEN
+        click.echo(f"  {country['country']:<3} {country['name']:<32} "
+                   f"{country['samples']:>2} sample(s) {_c(str(reachable), color)} reachable")
+
+    ok(f"{report['ok']} countries with data, {report['reachable_hosts']} reachable hosts, "
+       f"{report['duration_seconds']}s")
+
+    if output:
+        out_path = Path(output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding='utf-8')
+        ok(f"Report saved: {out_path}")
 
 
 # ==================== EXPLOITATION ====================

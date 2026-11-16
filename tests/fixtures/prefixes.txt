@@ -1,0 +1,7 @@
+# Sample country prefix report (same shape as the public ipverse file).
+# Mixed sizes and junk lines so the parser is exercised.
+49.0.0.0/9
+103.0.0.0/8
+not-a-network
+# comment line
+203.0.113.0/24

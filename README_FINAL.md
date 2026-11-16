@@ -26,6 +26,15 @@ subcommands live in `cli.py`, so invoke it explicitly inside the container.
 docker run --rm vuln-scanner python cli.py scan -t target.com --port 80,443 --timeout 2
 ```
 
+### Scan Every Country Automatically
+```bash
+# module 16: resolve each country's public blocks, sample them, probe web ports
+python cli.py global-scan -c PH,ID,JP --samples 2
+python cli.py global-scan --samples 1 -o reports/global.json   # all 249 countries
+docker run --rm vuln-scanner python cli.py global-scan -c PH
+```
+Details, limits and the JSON schema: [GLOBAL_SCAN.md](GLOBAL_SCAN.md).
+
 ### Generate Attack Payloads
 ```bash
 docker run --rm vuln-scanner python cli.py generate-payload --type xss
@@ -57,6 +66,7 @@ docker run --rm vuln-scanner python cli.py auto-exploit -t target.com -s moderat
 | **Authentication** | Default credentials, weak passwords, privilege escalation |
 | **Dependencies** | CVE database, vulnerable library detection |
 | **Misconfiguration** | CORS bypass, missing headers, cloud misconfigs |
+| **Global (module 16)** | Every country's public IPv4 blocks, auto-sampled and probed — see [GLOBAL_SCAN.md](GLOBAL_SCAN.md) |
 
 ### Exploitation Methods
 | Type | Variants |

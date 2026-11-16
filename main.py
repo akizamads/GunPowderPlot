@@ -15,6 +15,7 @@ The legacy Click CLI is still available via `python cli.py`.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import traceback
 from typing import Any, Dict, Optional
@@ -270,6 +271,11 @@ def _parse_args() -> argparse.Namespace:
                         choices=["aggressive", "moderate", "conservative"], help="module 13: strategy")
     parser.add_argument("--mode", default="sessions", choices=["server", "agent", "sessions", "task", "download"],
                         help="module 15: C2 mode")
+    parser.add_argument("--countries", default="all",
+                        help="module 16: ISO alpha-2 list, e.g. PH,ID,JP (default all)")
+    parser.add_argument("--samples", type=int, default=5, help="module 16: prefixes per country")
+    parser.add_argument("--prefix-source", default=None,
+                        help="module 16: local CIDR file instead of downloading the route report")
     parser.add_argument("--no-confirm", action="store_true",
                         help="do not prompt to save a report (implicit with --save)")
     parser.add_argument("--save", action="store_true", help="always write the report file")
@@ -302,11 +308,18 @@ def _noninteractive_inputs(args: argparse.Namespace) -> Dict[str, Any]:
         inputs["mode"] = args.mode
     elif args.module == 8:
         inputs["manifest"] = args.manifest
+    elif args.module == 16:
+        inputs["countries"] = args.countries
+        inputs["samples"] = args.samples
+        inputs["source"] = args.prefix_source or ""
     return inputs
 
 
 def main() -> int:
     args = _parse_args()
+    if args.module is not None and (args.no_confirm or args.save):
+        # Non-interactive runs must not block on prompts.
+        os.environ["VSCAN_ASSUME_YES"] = "1"
     if args.log_file:
         setup_logging(log_file=__import__("pathlib").Path(args.log_file))
 

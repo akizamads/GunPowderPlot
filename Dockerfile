@@ -30,10 +30,13 @@ COPY exploit_orchestrator.py .
 COPY reporter.py .
 COPY platform_core.py .
 COPY c2_module.py .
+COPY global_scan.py .
 COPY cli.py .
 COPY main.py .
+COPY smoke_check.py .
 COPY core/ ./core/
 COPY modules/ ./modules/
+COPY tests/ ./tests/
 
 # Create non-root user and give ownership of the app dir
 RUN useradd -m -u 1000 scanner && mkdir -p /app/reports && chown -R scanner:scanner /app
